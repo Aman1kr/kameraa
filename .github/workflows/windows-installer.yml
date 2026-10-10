@@ -63,6 +63,16 @@ jobs:
           Write-Host "Using $($wd.FullName)"
           & $wd.FullName --release --no-translations --no-opengl-sw --dir deploy deploy\kameraa.exe
 
+          # Bundle non-Qt runtime DLLs (OpenCV, spdlog + their dependencies) from
+          # the vcpkg release bin folder — windeployqt does not copy these.
+          $vcpkgBin = Get-ChildItem -Recurse -Directory -Path build\windows\vcpkg_installed `
+            -Filter bin -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match 'x64-windows\\bin$' } | Select-Object -First 1
+          if ($null -eq $vcpkgBin) { throw "vcpkg x64-windows\bin not found." }
+          Write-Host "Copying runtime DLLs from $($vcpkgBin.FullName)"
+          Copy-Item "$($vcpkgBin.FullName)\*.dll" deploy\ -Force
+          Write-Host "Deploy folder now contains $((Get-ChildItem deploy -Filter *.dll).Count) DLLs."
+
       - name: Install Inno Setup
         run: choco install innosetup -y --no-progress
 
