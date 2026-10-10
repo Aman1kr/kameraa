@@ -56,6 +56,12 @@ jobs:
         with:
           vcpkgGitCommitId: 'e456309491fd875487bf02b8a0dca76c1b1b00cc'
 
+      - name: Set up MSVC environment (Windows, for Ninja)
+        if: matrix.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Configure
         run: >
           cmake --preset ${{ matrix.preset }}

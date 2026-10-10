@@ -32,6 +32,11 @@ jobs:
         with:
           vcpkgGitCommitId: 'e456309491fd875487bf02b8a0dca76c1b1b00cc'
 
+      - name: Set up MSVC environment (for Ninja)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Configure
         run: >
           cmake --preset windows
@@ -43,10 +48,11 @@ jobs:
       - name: Prepare deploy folder (app + Qt runtime + models)
         shell: pwsh
         run: |
-          $exe = "build\windows\src\app\Release\kameraa.exe"
-          if (-not (Test-Path $exe)) { throw "Build output not found: $exe" }
+          $exe = Get-ChildItem -Recurse -Path build\windows -Filter kameraa.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($null -eq $exe) { throw "Build output kameraa.exe not found under build\windows" }
+          Write-Host "Found app: $($exe.FullName)"
           New-Item -ItemType Directory -Force -Path deploy | Out-Null
-          Copy-Item $exe deploy\
+          Copy-Item $exe.FullName deploy\
           New-Item -ItemType Directory -Force -Path deploy\models | Out-Null
           Copy-Item models\manifest.json deploy\models\
 
