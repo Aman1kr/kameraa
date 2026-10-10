@@ -1,0 +1,9 @@
+#pragma once
+
+// Generated from cmake/Version.h.in by CMake — do not edit by hand.
+namespace kameraa {
+inline constexpr char kAppName[] = "Kameraa";
+inline constexpr char kVersion[] = "@PROJECT_VERSION@";
+inline constexpr char kBundleId[] = "com.kameraa.app";
+inline constexpr char kHomepage[] = "https://github.com/kameraa/kameraa";
+}  // namespace kameraa

@@ -1,0 +1,7 @@
+add_subdirectory(core)
+add_subdirectory(capture)
+add_subdirectory(processing)
+add_subdirectory(config)
+add_subdirectory(output)
+add_subdirectory(gui)
+add_subdirectory(app)

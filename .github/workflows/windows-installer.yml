@@ -1,0 +1,83 @@
+name: Windows Installer
+
+# Produces a downloadable Kameraa-Setup-<version>.exe. Run it from the GitHub
+# "Actions" tab (Run workflow) or by pushing a v* tag. Download the installer from
+# the run's "Artifacts" section when it finishes.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: [ 'v*' ]
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    env:
+      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Export GitHub Actions cache env (vcpkg)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: 'c82f74667287d3dc386bce81e44964370c91a289'
+
+      - name: Configure
+        run: >
+          cmake --preset windows
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+      - name: Build (Release)
+        run: cmake --build --preset windows --config Release
+
+      - name: Prepare deploy folder (app + Qt runtime + models)
+        shell: pwsh
+        run: |
+          $exe = "build\windows\src\app\Release\kameraa.exe"
+          if (-not (Test-Path $exe)) { throw "Build output not found: $exe" }
+          New-Item -ItemType Directory -Force -Path deploy | Out-Null
+          Copy-Item $exe deploy\
+          New-Item -ItemType Directory -Force -Path deploy\models | Out-Null
+          Copy-Item models\manifest.json deploy\models\
+
+          # Find windeployqt from the vcpkg-installed Qt and bundle Qt runtime.
+          $wd = Get-ChildItem -Recurse -ErrorAction SilentlyContinue -Filter windeployqt.exe `
+            -Path build\windows\vcpkg_installed, vcpkg_installed, vcpkg | Select-Object -First 1
+          if ($null -eq $wd) { throw "windeployqt.exe not found in vcpkg Qt install." }
+          Write-Host "Using $($wd.FullName)"
+          & $wd.FullName --release --no-translations --no-opengl-sw --dir deploy deploy\kameraa.exe
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Determine version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}"
+          if ($v -match '^v\d') { $v = $v.TrimStart('v') } else { $v = "1.0.0-dev" }
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
+            "/DAppVersion=${{ steps.ver.outputs.version }}" `
+            packaging\windows\kameraa.iss
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kameraa-Windows-Installer
+          path: packaging/windows/Output/*.exe
+          if-no-files-found: error

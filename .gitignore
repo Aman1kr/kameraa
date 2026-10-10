@@ -1,0 +1,40 @@
+# Build (keep the folder structure + placeholders, ignore actual build output)
+/build/*
+!/build/README.md
+!/build/windows/
+!/build/linux/
+!/build/macos/
+/build/windows/*
+/build/linux/*
+/build/macos/*
+!/build/windows/.gitkeep
+!/build/linux/.gitkeep
+!/build/macos/.gitkeep
+/out/
+/cmake-build-*/
+/.vcpkg/
+
+# Release/packaging working output (keep configs, ignore built artifacts)
+/deploy/
+/release/*/dist/
+/release/linux/AppDir/
+/release/linux/.tools/
+
+# Local tooling downloaded for setup (portable gh CLI, etc.)
+/.tools/
+
+# Dependencies
+/vcpkg_installed/
+/vcpkg/
+
+# IDE
+/.vs/
+/.idea/
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Models (large, downloaded/bundled separately)
+/models/*.onnx

@@ -1,0 +1,9 @@
+Place release artwork here before publishing:
+
+- kameraa.png            256x256 app icon (Linux AppImage / desktop)
+- kameraa.ico            Windows app/installer icon
+- kameraa.icns           macOS app icon
+- store/                 screenshots and store banners
+
+These are binary assets and are intentionally not committed as placeholders.
+Replace this note with the real files before a release.

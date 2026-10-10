@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata for Linux software centers. -->
+<component type="desktop-application">
+  <id>com.kameraa.Kameraa</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Kameraa</name>
+  <summary>Enhance your webcam and publish it as a virtual camera</summary>
+  <description>
+    <p>
+      Kameraa captures your webcam, enhances it (denoise, relight, sharpen,
+      AI super-resolution, background blur/replace, face smoothing) and publishes
+      the result as a virtual camera usable in Teams, Meet, Zoom, OBS, browsers and
+      more. It runs locally and offline — no cloud, no account.
+    </p>
+    <p>
+      Note: enhancement improves perceived quality but cannot create true 4K detail
+      a sensor never captured, and video-call apps cap what they transmit.
+    </p>
+  </description>
+  <launchable type="desktop-id">kameraa.desktop</launchable>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+  </categories>
+  <url type="homepage">https://github.com/kameraa/kameraa</url>
+  <provides>
+    <binary>kameraa</binary>
+  </provides>
+  <releases>
+    <release version="1.0.0" date="2026-10-10"/>
+  </releases>
+</component>

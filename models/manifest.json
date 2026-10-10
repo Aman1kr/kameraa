@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "note": "Model binaries are not bundled in-repo. Drop the .onnx files listed below into this folder (or set KAMERAA_MODELS_DIR). Verify each file's license before use; see docs/06-AI-MODELS.md. 'found: false' entries simply stay disabled at runtime.",
+  "models": [
+    {
+      "id": "superres",
+      "task": "super-resolution",
+      "file": "espcn_x2.onnx",
+      "sha256": "",
+      "scale": 2,
+      "license": "verify-before-use"
+    },
+    {
+      "id": "background",
+      "task": "matting",
+      "file": "modnet_512.onnx",
+      "sha256": "",
+      "inputSize": 512,
+      "license": "verify-before-use"
+    },
+    {
+      "id": "face_detect",
+      "task": "face-detection",
+      "file": "face_detection_yunet.onnx",
+      "sha256": "",
+      "license": "MIT (OpenCV Zoo)"
+    },
+    {
+      "id": "interp",
+      "task": "frame-interpolation",
+      "file": "rife.onnx",
+      "sha256": "",
+      "license": "verify-before-use"
+    }
+  ]
+}

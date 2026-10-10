@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Kameraa
+GenericName=Virtual Camera Enhancer
+Comment=Enhance your webcam and publish it as a virtual camera
+Exec=kameraa
+Icon=kameraa
+Terminal=false
+Categories=AudioVideo;Video;Utility;
+Keywords=camera;webcam;virtual camera;video;enhance;
+StartupNotify=true
