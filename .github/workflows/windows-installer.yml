@@ -61,7 +61,7 @@ jobs:
             -Path build\windows\vcpkg_installed, vcpkg_installed, vcpkg | Select-Object -First 1
           if ($null -eq $wd) { throw "windeployqt.exe not found in vcpkg Qt install." }
           Write-Host "Using $($wd.FullName)"
-          & $wd.FullName --release --no-translations --no-opengl-sw --dir deploy deploy\kameraa.exe
+          & $wd.FullName --release --no-translations --no-opengl-sw --compiler-runtime --dir deploy deploy\kameraa.exe
 
           # Bundle non-Qt runtime DLLs (OpenCV, spdlog + their dependencies) from
           # the vcpkg release bin folder — windeployqt does not copy these.
@@ -71,6 +71,23 @@ jobs:
           if ($null -eq $vcpkgBin) { throw "vcpkg x64-windows\bin not found." }
           Write-Host "Copying runtime DLLs from $($vcpkgBin.FullName)"
           Copy-Item "$($vcpkgBin.FullName)\*.dll" deploy\ -Force
+
+          # Bundle the Microsoft Visual C++ runtime (MSVCP140/VCRUNTIME140*) so the
+          # app runs on a clean machine without the VC++ redistributable installed.
+          $crt = $null
+          if ($env:VCToolsRedistDir -and (Test-Path "$env:VCToolsRedistDir\x64")) {
+            $crt = Get-ChildItem -Path "$env:VCToolsRedistDir\x64" -Directory -Filter "Microsoft.VC*.CRT" -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if ($null -eq $crt) {
+            $crt = Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio", "C:\Program Files (x86)\Microsoft Visual Studio" -Recurse -Directory -Filter "Microsoft.VC*.CRT" -ErrorAction SilentlyContinue |
+              Where-Object { $_.FullName -match '\\x64\\' } | Select-Object -First 1
+          }
+          if ($crt) {
+            Write-Host "Copying MSVC runtime from $($crt.FullName)"
+            Copy-Item "$($crt.FullName)\*.dll" deploy\ -Force
+          } else {
+            Write-Warning "MSVC runtime CRT folder not found; app may need VC++ redistributable."
+          }
           Write-Host "Deploy folder now contains $((Get-ChildItem deploy -Filter *.dll).Count) DLLs."
 
       - name: Install Inno Setup
