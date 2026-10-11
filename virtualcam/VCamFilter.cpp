@@ -164,8 +164,61 @@ CFactoryTemplate g_Templates[] = {
      nullptr, &kFilter}};
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
-STDAPI DllRegisterServer() { return AMovieDllRegisterServer2(TRUE); }
-STDAPI DllUnregisterServer() { return AMovieDllRegisterServer2(FALSE); }
+// Register/unregister the filter under the video input device category so that
+// apps (Zoom/Teams/Meet/OBS/browsers) list it as a selectable camera.
+static HRESULT RegisterInVideoCategory(bool reg) {
+    HRESULT hr = CoInitialize(nullptr);
+    const bool didInit = SUCCEEDED(hr);
+
+    IFilterMapper2* mapper = nullptr;
+    hr = CoCreateInstance(CLSID_FilterMapper2, nullptr, CLSCTX_INPROC_SERVER,
+                          IID_IFilterMapper2, reinterpret_cast<void**>(&mapper));
+    if (SUCCEEDED(hr) && mapper) {
+        if (reg) {
+            REGPINTYPES pinType = {&MEDIATYPE_Video, &MEDIASUBTYPE_RGB24};
+            REGFILTERPINS pin = {};
+            pin.strName = const_cast<LPWSTR>(L"Out");
+            pin.bRendered = FALSE;
+            pin.bOutput = TRUE;
+            pin.bZero = FALSE;
+            pin.bMany = FALSE;
+            pin.clsConnectsToFilter = &CLSID_NULL;
+            pin.strConnectsToPin = nullptr;
+            pin.nMediaTypes = 1;
+            pin.lpMediaType = &pinType;
+
+            REGFILTER2 rf2 = {};
+            rf2.dwVersion = 1;
+            rf2.dwMerit = MERIT_DO_NOT_USE;
+            rf2.cPins = 1;
+            rf2.rgPins = &pin;
+
+            IMoniker* moniker = nullptr;
+            hr = mapper->RegisterFilter(CLSID_KameraaVCam, L"Kameraa Virtual Camera",
+                                        &moniker, &CLSID_VideoInputDeviceCategory,
+                                        nullptr, &rf2);
+            if (moniker) moniker->Release();
+        } else {
+            mapper->UnregisterFilter(&CLSID_VideoInputDeviceCategory, nullptr,
+                                     CLSID_KameraaVCam);
+            hr = S_OK;
+        }
+        mapper->Release();
+    }
+    if (didInit) CoUninitialize();
+    return hr;
+}
+
+STDAPI DllRegisterServer() {
+    HRESULT hr = AMovieDllRegisterServer2(TRUE);
+    if (FAILED(hr)) return hr;
+    return RegisterInVideoCategory(true);
+}
+
+STDAPI DllUnregisterServer() {
+    RegisterInVideoCategory(false);
+    return AMovieDllRegisterServer2(FALSE);
+}
 
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved) {
