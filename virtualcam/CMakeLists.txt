@@ -69,3 +69,8 @@ target_link_libraries(kameraa_vcam PRIVATE
 )
 
 set_target_properties(kameraa_vcam PROPERTIES OUTPUT_NAME "kameraa_vcam")
+
+# Statically link the MSVC runtime so the DLL loads in any host process
+# (regsvr32 / Zoom / Teams / Meet) without needing the VC++ redistributable.
+set_property(TARGET kameraa_vcam PROPERTY
+    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
