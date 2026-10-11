@@ -1,0 +1,51 @@
+name: Virtual Camera DLL
+
+# Fast, standalone build of the DirectShow virtual-camera filter (kameraa_vcam.dll).
+# No Qt/OpenCV/vcpkg — builds in ~2 minutes, used to iterate on the filter compile.
+# Run from the Actions tab (Run workflow). Download the DLL from Artifacts.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dll:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Set up MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Fetch DirectShow base classes
+        shell: pwsh
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/microsoft/Windows-classic-samples.git baseclasses-src
+          Push-Location baseclasses-src
+          git sparse-checkout set Samples/Win7Samples/multimedia/directshow/baseclasses
+          Pop-Location
+          $bc = "baseclasses-src/Samples/Win7Samples/multimedia/directshow/baseclasses"
+          if (-not (Test-Path "$bc/streams.h")) { throw "base classes not fetched (streams.h missing)" }
+          $p = ((Resolve-Path $bc).Path) -replace '\\','/'
+          "STRMBASE_DIR=$p" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Base classes at: $p"
+          Get-ChildItem "$bc\*.cpp" | Select-Object -ExpandProperty Name
+
+      - name: Build the DLL
+        shell: pwsh
+        run: |
+          cmake -S virtualcam -B build/vcam -G Ninja -DCMAKE_BUILD_TYPE=Release `
+            -DKAMERAA_BUILD_DSHOW_FILTER=ON "-DKAMERAA_STRMBASE_DIR=$env:STRMBASE_DIR"
+          cmake --build build/vcam
+          Get-ChildItem -Recurse build/vcam -Filter *.dll | Select-Object FullName
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: kameraa_vcam_dll
+          path: build/vcam/*.dll
+          if-no-files-found: error

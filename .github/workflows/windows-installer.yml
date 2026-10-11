@@ -37,10 +37,25 @@ jobs:
         with:
           arch: x64
 
+      - name: Fetch DirectShow base classes
+        shell: pwsh
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/microsoft/Windows-classic-samples.git baseclasses-src
+          Push-Location baseclasses-src
+          git sparse-checkout set Samples/Win7Samples/multimedia/directshow/baseclasses
+          Pop-Location
+          $bc = "baseclasses-src/Samples/Win7Samples/multimedia/directshow/baseclasses"
+          if (-not (Test-Path "$bc/streams.h")) { throw "base classes not fetched (streams.h missing)" }
+          $p = ((Resolve-Path $bc).Path) -replace '\\','/'
+          "STRMBASE_DIR=$p" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Base classes at: $p"
+
       - name: Configure
         run: >
           cmake --preset windows
           -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DKAMERAA_BUILD_DSHOW_FILTER=ON
+          "-DKAMERAA_STRMBASE_DIR=${{ env.STRMBASE_DIR }}"
 
       - name: Build (Release)
         run: cmake --build --preset windows --config Release
@@ -88,6 +103,11 @@ jobs:
           } else {
             Write-Warning "MSVC runtime CRT folder not found; app may need VC++ redistributable."
           }
+
+          # Bundle the DirectShow virtual-camera filter DLL (registered by the installer).
+          $vcam = Get-ChildItem -Recurse -Path build\windows -Filter kameraa_vcam.dll -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($vcam) { Copy-Item $vcam.FullName deploy\ -Force; Write-Host "Bundled virtual camera: $($vcam.FullName)" }
+          else { Write-Warning "kameraa_vcam.dll not built - virtual camera will be unavailable." }
           Write-Host "Deploy folder now contains $((Get-ChildItem deploy -Filter *.dll).Count) DLLs."
 
       - name: Install Inno Setup
