@@ -25,6 +25,9 @@ if(NOT KAMERAA_BUILD_DSHOW_FILTER)
     return()
 endif()
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(KAMERAA_STRMBASE_DIR "" CACHE PATH "Directory with DirectShow base classes sources (strmbase)")
 if(NOT KAMERAA_STRMBASE_DIR OR NOT EXISTS "${KAMERAA_STRMBASE_DIR}/streams.h")
     message(FATAL_ERROR
